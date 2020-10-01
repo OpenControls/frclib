@@ -20,7 +20,7 @@ public class EnhancedEnum{
      * Create a new EnhancedEnum with a set of entries
      * @param entries
      */
-    EnhancedEnum(String[] entries){
+    public EnhancedEnum(String[] entries){
         this.entries = entries;
     }
 

@@ -3,8 +3,8 @@ package frc.robot.FRCLib.Motors;
 import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
-
-public class FRCVictorSPX {
+//TODO implement Sendable
+public class FRCVictorSPX implements FRCBaseMotorController {
     private int canID;
     private boolean inverted;
     private InvertType invertType;

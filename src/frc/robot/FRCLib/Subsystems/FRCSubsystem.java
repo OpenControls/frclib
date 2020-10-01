@@ -13,20 +13,61 @@ import frc.robot.FRCLib.EnhancedEnum;
 import frc.robot.FRCLib.AutoHelperFunctions.AutonConversionFactors;
 import frc.robot.FRCLib.Motors.FRCTalonFX;
 
-public class FRCSubsystem extends Subsystem{
+/**
+ * A base FRC Subsystem that OpenControls will use to build other subsystems
+ * 
+ * All subsystems will have a setpoint and a state in order to facilitate state management and control
+ * Please use the set() method to update the setpoint.
+ * 
+ * This class should be extended to be used properly
+ */
+public abstract class FRCSubsystem extends Subsystem{
+
+
+    /**
+     * The enum for the current state
+     */
     public EnhancedEnum subsystemState;
 
+    /**
+     * The current setpoint for the mechanism
+     * 
+     * Do not use this if you are using a FRCDrivetrain
+     */
     private double setpoint;
 
+    /**
+     * Creates an FRC Subsystem
+     */
+    public FRCSubsystem(){
+        super();
+
+        this.constructState();
+    }
+
+    /**
+     * Constructs the state for an FRCSubsystem
+     */
+    public abstract void constructState();
+
+    /**
+     * Set the setpoint for the subsystem
+     * @param setpoint
+     */
     public void set(double setpoint){
         this.setpoint = setpoint;
         this.onNewSetpoint();
     }
 
-    public void onNewSetpoint(){
+    /**
+     * Process data when a new setpoint is set
+     */
+    public abstract void onNewSetpoint();
 
-    }
-
+    /**
+     * Get the current setpoint of the subsystem
+     * @return
+     */
     public double getSetpoint(){
         return this.setpoint;
     }

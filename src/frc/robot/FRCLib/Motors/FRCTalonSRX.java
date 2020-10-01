@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 /**
  * An abstraction for the Talon SRX for debugging information
  */
-public class FRCTalonSRX implements Sendable {
+public class FRCTalonSRX implements Sendable, FRCBaseMotorController {
 
     @Override
     public void initSendable(SendableBuilder builder) {

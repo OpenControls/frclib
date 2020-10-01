@@ -20,7 +20,7 @@ import frc.robot.Robot;
 /**
  * An abstraction for the Talon FX for debugging information
  */
-public class FRCTalonFX implements Sendable {
+public class FRCTalonFX implements Sendable, FRCBaseMotorController {
     
     /**
      * Tells Talon FX which motor controller to follow
