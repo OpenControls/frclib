@@ -72,6 +72,9 @@ public abstract class FRCSubsystem extends Subsystem{
         return this.setpoint;
     }
 
+    public boolean isInTargetRange(){
+        return true;
+    }
     @Override
     public void periodic(){
 
