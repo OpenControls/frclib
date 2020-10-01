@@ -8,47 +8,26 @@
 package frc.robot.FRCLib.Motors;
 
 import com.ctre.phoenix.motorcontrol.*;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.wpilibj.Sendable;
 import edu.wpi.first.wpilibj.smartdashboard.SendableBuilder;
-
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
-import frc.robot.Robot;
 
 /**
- * An abstraction for the Talon FX for debugging information
+ * An abstraction for the Talon SRX for debugging information
  */
-public class FRCTalonFX implements Sendable {
-    
-    /**
-     * Tells Talon FX which motor controller to follow
-     * 
-     * Send null to stop following
-     *  
-     * @param master motor to follow
-     * 
-     * @deprecated use FRCTalonFXBuilder.withMaster() instead.  
-     */
-    @Deprecated(forRemoval = true)
-    public void follow(FRCTalonFX master) {
-        this.master = master;
-        this.motor.follow(this.master.motor);
-
-    }
+public class FRCTalonSRX implements Sendable, FRCBaseMotorController {
 
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("Text View");
         builder.addDoubleProperty("EncoderPosition", this::getSelectedSensorPosition, null);
         builder.addDoubleProperty("EncoderSpeed", this::getSensorVelocity, null);
-        builder.addDoubleProperty("Fwd Limit", this.m_sensorCollection::isFwdLimitSwitchClosed, null);
-        builder.addDoubleProperty("Rev Limit", this.m_sensorCollection::isRevLimitSwitchClosed, null);
-        builder.addDoubleProperty("current", motor::getStatorCurrent, null);
-        builder.addBooleanProperty("Inverted", motor::getInverted, null);
-        builder.addStringProperty("Control Mode", () -> motor.getControlMode().toString(), null);
-        builder.addDoubleProperty("Voltage Output", motor::getMotorOutputVoltage, null);
+        builder.addDoubleProperty("Analog Input", this.m_sensorCollection::getAnalogIn, null);
+        builder.addBooleanProperty("Fwd Limit", this.m_sensorCollection::isFwdLimitSwitchClosed, null);
+        builder.addBooleanProperty("Rev Limit", this.m_sensorCollection::isRevLimitSwitchClosed, null);
+
     }
 
     public void reset() {
@@ -56,19 +35,12 @@ public class FRCTalonFX implements Sendable {
     }
 
     public void driveVelocity(double velocity) {
-        if(Constants.DrivetrainConstants.DEBUG){
-            System.out.println("Current Velocity "+velocity);
-        }
         this.motor.set(ControlMode.Velocity, velocity);
     }
 
     public void drivePercentOutput(double percentOutput) {
         this.motor.set(ControlMode.PercentOutput, percentOutput);
 
-    }
-
-    public void setSensorPosition(int position){
-        this.motor.setSelectedSensorPosition(position);
     }
 
     public void driveMotionMagic(double setpoint) {
@@ -113,6 +85,7 @@ public class FRCTalonFX implements Sendable {
                     this.isForwardSoftLimitEnabled());
             SmartDashboard.putNumber(this.getSmartDashboardPath() + "/forwardSoftLimitThreshold",
                     this.getForwardSoftLimitThreshold());
+            SmartDashboard.putBoolean(this.getSmartDashboardPath() + "/inverted", this.isInverted());
             SmartDashboard.putString(this.getSmartDashboardPath() + "/invertType", this.getInvertType().toString());
             SmartDashboard.putNumber(this.getSmartDashboardPath() + "/kP", this.getkP());
             SmartDashboard.putNumber(this.getSmartDashboardPath() + "/kI", this.getkI());
@@ -143,18 +116,17 @@ public class FRCTalonFX implements Sendable {
             SmartDashboard.putBoolean(this.getSmartDashboardPath() + "/sensorPhase", this.isSensorPhase());
             SmartDashboard.putString(this.getSmartDashboardPath() + "/SmartDashboardPath",
                     this.getSmartDashboardPath());
+
             SmartDashboard.putNumber(this.getSmartDashboardPath() + "/statusFrame", this.getStatusFrame());
-            if (Robot.isReal()) {
-                SmartDashboard.putString(this.getSmartDashboardPath() + "/statusFrameType",
-                        this.getStatusFrameType().toString());
-                SmartDashboard.putNumber(this.getSmartDashboardPath() + "/timeout", this.getTimeout());
-                SmartDashboard.putString(this.getSmartDashboardPath() + "/velocityMeasurementPeriod",
-                        this.getVelocityMeasurementPeriod().toString());
-                SmartDashboard.putNumber(this.getSmartDashboardPath() + "/velocityMeasurementWindow",
-                        this.getVelocityMeasurementWindow());
-                SmartDashboard.putNumber(this.getSmartDashboardPath() + "/voltageCompensationSaturation",
-                        this.getVoltageCompensationSaturation());
-            }
+            SmartDashboard.putString(this.getSmartDashboardPath() + "/statusFrameType",
+                    this.getStatusFrameType().toString());
+            SmartDashboard.putNumber(this.getSmartDashboardPath() + "/timeout", this.getTimeout());
+            SmartDashboard.putString(this.getSmartDashboardPath() + "/velocityMeasurementPeriod",
+                    this.getVelocityMeasurementPeriod().toString());
+            SmartDashboard.putNumber(this.getSmartDashboardPath() + "/velocityMeasurementWindow",
+                    this.getVelocityMeasurementWindow());
+            SmartDashboard.putNumber(this.getSmartDashboardPath() + "/voltageCompensationSaturation",
+                    this.getVoltageCompensationSaturation());
 
         }
 
@@ -164,15 +136,15 @@ public class FRCTalonFX implements Sendable {
     /**
      * A direct reference to the TalonSRX motor, designed for direct control
      */
-    public WPI_TalonFX motor;
+    public WPI_TalonSRX motor;
 
     /**
      * The master that will be followed
      */
-    public FRCTalonFX master;
+    public FRCTalonSRX master;
     ///////////////////////////////////////////////////////////////////////////
+    public SensorCollection m_sensorCollection;
 
-    public TalonFXSensorCollection m_sensorCollection;
     /**
      * The Can ID of the selected motor
      */
@@ -181,9 +153,24 @@ public class FRCTalonFX implements Sendable {
     /**
      * The inversion of the motor
      *
+     * true inverts the motor
+     */
+    private boolean inverted;
+
+    /**
+     * The inversion of the motor
+     *
      * Uses CTRE InvertType
      */
     private InvertType invertType;
+
+    /**
+     * Determines what mode to use for inversion
+     * 
+     * true uses InvertType invertType
+     * false uses boolean inverted
+     */
+    private boolean useInvertType;
 
     /**
      * The feedback port of the motor Default is 0
@@ -374,28 +361,30 @@ public class FRCTalonFX implements Sendable {
         motor.config_kP(0, this.getkP());
         motor.config_kI(0, this.getkI());
         motor.config_kD(0, this.getkD());
-        motor.config_kF(0, this.getkF());
-
-    
-
-        System.out.println("Wrote PID TO "+motor.getDeviceID() + " KF VALUE " + this.getkF());
+        motor.config_kF(1, this.getkF());
 
     }
+	
+	public int getRawAnalogSensor(){
+        return m_sensorCollection.getAnalogInRaw();
+    }
 
-    public FRCTalonFX configure() {
-        motor = new WPI_TalonFX(this.getCanID());
-
+    public FRCTalonSRX configure() {
+        motor = new WPI_TalonSRX(this.getCanID());
         m_sensorCollection = motor.getSensorCollection();
+
         motor.configFactoryDefault();
         motor.setSafetyEnabled(false);
 
-        motor.selectProfileSlot(0, 0);
-        motor.setSafetyEnabled(false);
-        if (this.isInvertedWithType()) {
-            motor.setInverted(this.invertType);
+        if (this.isInverted() || this.isInvertedWithType()) {
+            if (this.useInvertType) motor.setInverted(this.invertType);
+            else  motor.setInverted(this.isInverted());
             System.out.println("Configuring Inverted");
         }
         if (this.isCurrentLimitEnabled()) {
+            motor.enableCurrentLimit(this.isCurrentLimitEnabled());
+            motor.configContinuousCurrentLimit(this.getCurrentLimit());
+            System.out.println("Configuring Current Limit");
 
         }
         if (this.isFeedbackNotContinuous()) {
@@ -460,7 +449,6 @@ public class FRCTalonFX implements Sendable {
             System.out.println("Setting Saturation");
 
         }
-        System.out.println("MOTOR "+this.motor.getDeviceID()+ "KF "+ this.getkF());
         if (this.getkP() != 0 || this.getkI() != 0 || this.getkD() != 0 || this.getkF() != 0) {
             updatePIDController();
             System.out.println("Setting PID Controller");
@@ -471,11 +459,11 @@ public class FRCTalonFX implements Sendable {
         return this;
     }
 
-    public WPI_TalonFX getMotor() {
+    public WPI_TalonSRX getMotor() {
         return motor;
     }
 
-    public void setMotor(WPI_TalonFX motor) {
+    public void setMotor(WPI_TalonSRX motor) {
         this.motor = motor;
     }
 
@@ -487,6 +475,10 @@ public class FRCTalonFX implements Sendable {
         this.canID = canID;
     }
 
+    public boolean isInverted() {
+        return inverted;
+    }
+
     public boolean isInvertedWithType() {
         return invertType != InvertType.None;
     }
@@ -495,8 +487,16 @@ public class FRCTalonFX implements Sendable {
         return this.invertType;
     }
 
+    public void setInverted(boolean inverted) {
+        this.inverted = inverted;
+        this.invertType = InvertType.None;
+        this.useInvertType = false;
+    }
+
     public void setInverted(InvertType inverted) {
         this.invertType = inverted;
+        this.inverted = false;
+        this.useInvertType = true;
     }
 
     public int getFeedbackPort() {
@@ -783,13 +783,15 @@ public class FRCTalonFX implements Sendable {
         this.feedbackNotContinuous = feedbackNotContinuous;
     }
 
-    public void setMaster(FRCTalonFX master) {
+    public void setMaster(FRCTalonSRX master) {
         this.master = master;
     }
 
-    public static final class FRCTalonFXBuilder {
+    public static final class FRCTalonSRXBuilder {
         private int canID;
+        private boolean inverted = false;
         private InvertType invertType = InvertType.None;
+        private boolean useInvertType = false;
         private int feedbackPort = 0;
         private int timeout = 10;
         private boolean sensorPhase = false;
@@ -825,249 +827,252 @@ public class FRCTalonFX implements Sendable {
         private int motionCurveStrength = 0;
         private int motionProfileTrajectoryPeriod = 0;
         private boolean feedbackNotContinuous = false;
-        private FRCTalonFX master;
+        private FRCTalonSRX master;
 
-        public FRCTalonFXBuilder(int canID) {
+        public FRCTalonSRXBuilder(int canID) {
             this.canID = canID;
-            this.smartDashboardPath = "TalonFX_" + canID;
+            this.smartDashboardPath = "TalonSRX_" + canID;
         }
 
-        // public static FRCTalonFXBuilder aFRCTalonFX() {
-        // return new FRCTalonFXBuilder();
-        // }
-
-        public FRCTalonFXBuilder withCanID(int canID) {
+        public FRCTalonSRXBuilder withCanID(int canID) {
             this.canID = canID;
             return this;
         }
 
-        public FRCTalonFXBuilder withInverted(InvertType invert) {
-            this.invertType = invert;
+        public FRCTalonSRXBuilder withInverted(boolean inverted) {
+            this.inverted = inverted;
+            this.useInvertType = false;
             return this;
         }
 
-        public FRCTalonFXBuilder withFeedbackPort(int feedbackPort) {
+        public FRCTalonSRXBuilder withInverted(InvertType inverted) {
+            this.invertType = inverted;
+            this.useInvertType = true;
+            return this;
+        }
+
+        public FRCTalonSRXBuilder withFeedbackPort(int feedbackPort) {
             this.feedbackPort = feedbackPort;
             return this;
         }
 
-        public FRCTalonFXBuilder withTimeout(int timeout) {
+        public FRCTalonSRXBuilder withTimeout(int timeout) {
             this.timeout = timeout;
             return this;
         }
 
-        public FRCTalonFXBuilder withSensorPhase(boolean sensorPhase) {
+        public FRCTalonSRXBuilder withSensorPhase(boolean sensorPhase) {
             this.sensorPhase = sensorPhase;
             return this;
         }
 
-        public FRCTalonFXBuilder withKP(double kP) {
+        public FRCTalonSRXBuilder withKP(double kP) {
             this.kP = kP;
             return this;
         }
 
-        public FRCTalonFXBuilder withKI(double kI) {
+        public FRCTalonSRXBuilder withKI(double kI) {
             this.kI = kI;
             return this;
         }
 
-        public FRCTalonFXBuilder withKD(double kD) {
+        public FRCTalonSRXBuilder withKD(double kD) {
             this.kD = kD;
             return this;
         }
 
-        public FRCTalonFXBuilder withKF(double kF) {
+        public FRCTalonSRXBuilder withKF(double kF) {
             this.kF = kF;
             return this;
         }
 
-        public FRCTalonFXBuilder withAllowableClosedLoopError(int allowableClosedLoopError) {
+        public FRCTalonSRXBuilder withAllowableClosedLoopError(int allowableClosedLoopError) {
             this.allowableClosedLoopError = allowableClosedLoopError;
             return this;
         }
 
-        public FRCTalonFXBuilder withStatusFrameType(StatusFrameEnhanced statusFrameType) {
+        public FRCTalonSRXBuilder withStatusFrameType(StatusFrameEnhanced statusFrameType) {
             this.statusFrameType = statusFrameType;
             return this;
         }
 
-        public FRCTalonFXBuilder withStatusFrame(int statusFrame) {
+        public FRCTalonSRXBuilder withStatusFrame(int statusFrame) {
             this.statusFrame = statusFrame;
             return this;
         }
 
-        public FRCTalonFXBuilder withCurrentLimitEnabled(boolean currentLimitEnabled) {
+        public FRCTalonSRXBuilder withCurrentLimitEnabled(boolean currentLimitEnabled) {
             this.currentLimitEnabled = currentLimitEnabled;
             return this;
         }
 
-        public FRCTalonFXBuilder withCurrentLimit(int currentLimit) {
+        public FRCTalonSRXBuilder withCurrentLimit(int currentLimit) {
             this.currentLimit = currentLimit;
             return this;
         }
 
-        public FRCTalonFXBuilder withNeutralMode(NeutralMode neutralMode) {
+        public FRCTalonSRXBuilder withNeutralMode(NeutralMode neutralMode) {
             this.neutralMode = neutralMode;
             return this;
         }
 
-        public FRCTalonFXBuilder withSmartDashboardPutEnabled(boolean smartDashboardPutEnabled) {
+        public FRCTalonSRXBuilder withSmartDashboardPutEnabled(boolean smartDashboardPutEnabled) {
             this.smartDashboardPutEnabled = smartDashboardPutEnabled;
             return this;
         }
 
-        public FRCTalonFXBuilder withSmartDashboardPath(String smartDashboardPath) {
+        public FRCTalonSRXBuilder withSmartDashboardPath(String smartDashboardPath) {
             this.smartDashboardPath = smartDashboardPath;
             return this;
         }
 
-        public FRCTalonFXBuilder withOpenLoopRampRate(double openLoopRampRate) {
+        public FRCTalonSRXBuilder withOpenLoopRampRate(double openLoopRampRate) {
             this.openLoopRampRate = openLoopRampRate;
             return this;
         }
 
-        public FRCTalonFXBuilder withClosedLoopRampRate(double closedLoopRampRate) {
+        public FRCTalonSRXBuilder withClosedLoopRampRate(double closedLoopRampRate) {
             this.closedLoopRampRate = closedLoopRampRate;
             return this;
         }
 
-        public FRCTalonFXBuilder withNominalOutputForward(double nominalOutputForward) {
+        public FRCTalonSRXBuilder withNominalOutputForward(double nominalOutputForward) {
             this.nominalOutputForward = nominalOutputForward;
             return this;
         }
 
-        public FRCTalonFXBuilder withNominalOutputReverse(double nominalOutputReverse) {
+        public FRCTalonSRXBuilder withNominalOutputReverse(double nominalOutputReverse) {
             this.nominalOutputReverse = nominalOutputReverse;
             return this;
         }
 
-        public FRCTalonFXBuilder withPeakOutputForward(double peakOutputForward) {
+        public FRCTalonSRXBuilder withPeakOutputForward(double peakOutputForward) {
             this.peakOutputForward = peakOutputForward;
             return this;
         }
 
-        public FRCTalonFXBuilder withPeakOutputReverse(double peakOutputReverse) {
+        public FRCTalonSRXBuilder withPeakOutputReverse(double peakOutputReverse) {
             this.peakOutputReverse = peakOutputReverse;
             return this;
         }
 
-        public FRCTalonFXBuilder withNeutralDeadband(double neutralDeadband) {
+        public FRCTalonSRXBuilder withNeutralDeadband(double neutralDeadband) {
             this.neutralDeadband = neutralDeadband;
             return this;
         }
 
-        public FRCTalonFXBuilder withVoltageCompensationSaturation(double voltageCompensationSaturation) {
+        public FRCTalonSRXBuilder withVoltageCompensationSaturation(double voltageCompensationSaturation) {
             this.voltageCompensationSaturation = voltageCompensationSaturation;
             return this;
         }
 
-        public FRCTalonFXBuilder withVelocityMeasurementPeriod(VelocityMeasPeriod velocityMeasurementPeriod) {
+        public FRCTalonSRXBuilder withVelocityMeasurementPeriod(VelocityMeasPeriod velocityMeasurementPeriod) {
             this.velocityMeasurementPeriod = velocityMeasurementPeriod;
             return this;
         }
 
-        public FRCTalonFXBuilder withVelocityMeasurementWindow(int velocityMeasurementWindow) {
+        public FRCTalonSRXBuilder withVelocityMeasurementWindow(int velocityMeasurementWindow) {
             this.velocityMeasurementWindow = velocityMeasurementWindow;
             return this;
         }
 
-        public FRCTalonFXBuilder withForwardSoftLimitEnabled(boolean forwardSoftLimitEnabled) {
+        public FRCTalonSRXBuilder withForwardSoftLimitEnabled(boolean forwardSoftLimitEnabled) {
             this.forwardSoftLimitEnabled = forwardSoftLimitEnabled;
             return this;
         }
 
-        public FRCTalonFXBuilder withForwardSoftLimitThreshold(int forwardSoftLimitThreshold) {
+        public FRCTalonSRXBuilder withForwardSoftLimitThreshold(int forwardSoftLimitThreshold) {
             this.forwardSoftLimitThreshold = forwardSoftLimitThreshold;
             return this;
         }
 
-        public FRCTalonFXBuilder withReverseSoftLimitEnabled(boolean reverseSoftLimitEnabled) {
+        public FRCTalonSRXBuilder withReverseSoftLimitEnabled(boolean reverseSoftLimitEnabled) {
             this.reverseSoftLimitEnabled = reverseSoftLimitEnabled;
             return this;
         }
 
-        public FRCTalonFXBuilder withReverseSoftLimitThreshold(int reverseSoftLimitThreshold) {
+        public FRCTalonSRXBuilder withReverseSoftLimitThreshold(int reverseSoftLimitThreshold) {
             this.reverseSoftLimitThreshold = reverseSoftLimitThreshold;
             return this;
         }
 
-        public FRCTalonFXBuilder withAuxPIDPolarity(boolean auxPIDPolarity) {
+        public FRCTalonSRXBuilder withAuxPIDPolarity(boolean auxPIDPolarity) {
             this.auxPIDPolarity = auxPIDPolarity;
             return this;
         }
 
-        public FRCTalonFXBuilder withMotionCruiseVelocity(int motionCruiseVelocity) {
+        public FRCTalonSRXBuilder withMotionCruiseVelocity(int motionCruiseVelocity) {
             this.motionCruiseVelocity = motionCruiseVelocity;
             return this;
         }
 
-        public FRCTalonFXBuilder withMotionAcceleration(int motionAcceleration) {
+        public FRCTalonSRXBuilder withMotionAcceleration(int motionAcceleration) {
             this.motionAcceleration = motionAcceleration;
             return this;
         }
 
-        public FRCTalonFXBuilder withMotionCurveStrength(int motionCurveStrength) {
+        public FRCTalonSRXBuilder withMotionCurveStrength(int motionCurveStrength) {
             this.motionCurveStrength = motionCurveStrength;
             return this;
         }
 
-        public FRCTalonFXBuilder withMotionProfileTrajectoryPeriod(int motionProfileTrajectoryPeriod) {
+        public FRCTalonSRXBuilder withMotionProfileTrajectoryPeriod(int motionProfileTrajectoryPeriod) {
             this.motionProfileTrajectoryPeriod = motionProfileTrajectoryPeriod;
             return this;
         }
 
-        public FRCTalonFXBuilder withFeedbackNotContinuous(boolean feedbackNotContinuous) {
+        public FRCTalonSRXBuilder withFeedbackNotContinuous(boolean feedbackNotContinuous) {
             this.feedbackNotContinuous = feedbackNotContinuous;
             return this;
         }
 
-        public FRCTalonFXBuilder withMaster(FRCTalonFX master) {
+        public FRCTalonSRXBuilder withMaster(FRCTalonSRX master) {
             this.master = master;
             return this;
         }
 
-        public FRCTalonFX build() {
-            FRCTalonFX fRCTalonFX = new FRCTalonFX();
-            fRCTalonFX.setCanID(canID);
-            fRCTalonFX.setInverted(invertType);
-            fRCTalonFX.setFeedbackPort(feedbackPort);
-            fRCTalonFX.setTimeout(timeout);
-            fRCTalonFX.setSensorPhase(sensorPhase);
-            fRCTalonFX.setAllowableClosedLoopError(allowableClosedLoopError);
-            fRCTalonFX.setStatusFrameType(statusFrameType);
-            fRCTalonFX.setStatusFrame(statusFrame);
-            fRCTalonFX.setCurrentLimitEnabled(currentLimitEnabled);
-            fRCTalonFX.setCurrentLimit(currentLimit);
-            fRCTalonFX.setNeutralMode(neutralMode);
-            fRCTalonFX.setSmartDashboardPutEnabled(smartDashboardPutEnabled);
-            fRCTalonFX.setSmartDashboardPath(smartDashboardPath);
-            fRCTalonFX.setOpenLoopRampRate(openLoopRampRate);
-            fRCTalonFX.setClosedLoopRampRate(closedLoopRampRate);
-            fRCTalonFX.setNominalOutputForward(nominalOutputForward);
-            fRCTalonFX.setNominalOutputReverse(nominalOutputReverse);
-            fRCTalonFX.setPeakOutputForward(peakOutputForward);
-            fRCTalonFX.setPeakOutputReverse(peakOutputReverse);
-            fRCTalonFX.setNeutralDeadband(neutralDeadband);
-            fRCTalonFX.setVoltageCompensationSaturation(voltageCompensationSaturation);
-            fRCTalonFX.setVelocityMeasurementPeriod(velocityMeasurementPeriod);
-            fRCTalonFX.setVelocityMeasurementWindow(velocityMeasurementWindow);
-            fRCTalonFX.setForwardSoftLimitEnabled(forwardSoftLimitEnabled);
-            fRCTalonFX.setForwardSoftLimitThreshold(forwardSoftLimitThreshold);
-            fRCTalonFX.setReverseSoftLimitEnabled(reverseSoftLimitEnabled);
-            fRCTalonFX.setReverseSoftLimitThreshold(reverseSoftLimitThreshold);
-            fRCTalonFX.setAuxPIDPolarity(auxPIDPolarity);
-            fRCTalonFX.setMotionCruiseVelocity(motionCruiseVelocity);
-            fRCTalonFX.setMotionAcceleration(motionAcceleration);
-            fRCTalonFX.setMotionCurveStrength(motionCurveStrength);
-            fRCTalonFX.setMotionProfileTrajectoryPeriod(motionProfileTrajectoryPeriod);
-            fRCTalonFX.setFeedbackNotContinuous(feedbackNotContinuous);
-            fRCTalonFX.setMaster(master);
-            fRCTalonFX.kF = this.kF;
-            fRCTalonFX.kD = this.kD;
-            fRCTalonFX.kI = this.kI;
-            fRCTalonFX.kP = this.kP;
-            return fRCTalonFX.configure();
+        public FRCTalonSRX build() {
+            FRCTalonSRX fRCTalonSRX = new FRCTalonSRX();
+            fRCTalonSRX.setCanID(canID);
+            if (useInvertType) fRCTalonSRX.setInverted(invertType);
+            else fRCTalonSRX.setInverted(inverted);
+            fRCTalonSRX.setFeedbackPort(feedbackPort);
+            fRCTalonSRX.setTimeout(timeout);
+            fRCTalonSRX.setSensorPhase(sensorPhase);
+            fRCTalonSRX.setAllowableClosedLoopError(allowableClosedLoopError);
+            fRCTalonSRX.setStatusFrameType(statusFrameType);
+            fRCTalonSRX.setStatusFrame(statusFrame);
+            fRCTalonSRX.setCurrentLimitEnabled(currentLimitEnabled);
+            fRCTalonSRX.setCurrentLimit(currentLimit);
+            fRCTalonSRX.setNeutralMode(neutralMode);
+            fRCTalonSRX.setSmartDashboardPutEnabled(smartDashboardPutEnabled);
+            fRCTalonSRX.setSmartDashboardPath(smartDashboardPath);
+            fRCTalonSRX.setOpenLoopRampRate(openLoopRampRate);
+            fRCTalonSRX.setClosedLoopRampRate(closedLoopRampRate);
+            fRCTalonSRX.setNominalOutputForward(nominalOutputForward);
+            fRCTalonSRX.setNominalOutputReverse(nominalOutputReverse);
+            fRCTalonSRX.setPeakOutputForward(peakOutputForward);
+            fRCTalonSRX.setPeakOutputReverse(peakOutputReverse);
+            fRCTalonSRX.setNeutralDeadband(neutralDeadband);
+            fRCTalonSRX.setVoltageCompensationSaturation(voltageCompensationSaturation);
+            fRCTalonSRX.setVelocityMeasurementPeriod(velocityMeasurementPeriod);
+            fRCTalonSRX.setVelocityMeasurementWindow(velocityMeasurementWindow);
+            fRCTalonSRX.setForwardSoftLimitEnabled(forwardSoftLimitEnabled);
+            fRCTalonSRX.setForwardSoftLimitThreshold(forwardSoftLimitThreshold);
+            fRCTalonSRX.setReverseSoftLimitEnabled(reverseSoftLimitEnabled);
+            fRCTalonSRX.setReverseSoftLimitThreshold(reverseSoftLimitThreshold);
+            fRCTalonSRX.setAuxPIDPolarity(auxPIDPolarity);
+            fRCTalonSRX.setMotionCruiseVelocity(motionCruiseVelocity);
+            fRCTalonSRX.setMotionAcceleration(motionAcceleration);
+            fRCTalonSRX.setMotionCurveStrength(motionCurveStrength);
+            fRCTalonSRX.setMotionProfileTrajectoryPeriod(motionProfileTrajectoryPeriod);
+            fRCTalonSRX.setFeedbackNotContinuous(feedbackNotContinuous);
+            fRCTalonSRX.setMaster(master);
+            fRCTalonSRX.kF = this.kF;
+            fRCTalonSRX.kD = this.kD;
+            fRCTalonSRX.kI = this.kI;
+            fRCTalonSRX.kP = this.kP;
+            return fRCTalonSRX.configure();
         }
     }
-
 }
