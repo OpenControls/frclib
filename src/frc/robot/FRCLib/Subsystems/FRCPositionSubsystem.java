@@ -3,9 +3,9 @@ package frc.robot.FRCLib.Subsystems;
 import frc.robot.FRCLib.EnhancedEnum;
 import frc.robot.FRCLib.Motors.FRCBaseMotorController;
 
-abstract class FRCVelocitySubsystem extends FRCSubsystem{
+abstract class FRCPositionSubsystem extends FRCSubsystem{
     public FRCBaseMotorController leader;
-    public FRCVelocitySubsystem(){
+    public FRCPositionSubsystem(){
         super();
     }
     @Override
@@ -15,6 +15,7 @@ abstract class FRCVelocitySubsystem extends FRCSubsystem{
 
     @Override
     public void onNewSetpoint(){
-        this.leader.driveVelocity(this.getSetpoint());
+        //TODO Change to Position
+        this.leader.drivePercentOutput(this.getSetpoint());
     }
 }
