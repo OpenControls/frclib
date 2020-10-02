@@ -43,12 +43,18 @@ public abstract class FRCSubsystem extends Subsystem{
         super();
 
         this.constructState();
+        this.constructComponents();
+        
     }
 
     /**
      * Constructs the state for an FRCSubsystem
      */
     public abstract void constructState();
+
+    public void constructComponents(){
+        System.out.println("Method not implemented to construct a component");
+    }
 
     /**
      * Set the setpoint for the subsystem
